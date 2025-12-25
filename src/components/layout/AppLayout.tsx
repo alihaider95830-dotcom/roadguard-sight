@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { MobileBottomNav } from './MobileBottomNav';
 import { useAuthStore } from '@/stores/authStore';
 import { api, subscribeToEvents, startRealtimeSimulation } from '@/lib/api';
 import type { Alert } from '@/types';
@@ -93,10 +94,21 @@ export function AppLayout() {
           pendingAlerts={pendingAlerts}
           onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
         />
-        <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
+        <main className={cn(
+          'flex-1 p-3 sm:p-4 md:p-6 overflow-auto',
+          isMobile && 'pb-20' // Add padding for bottom nav
+        )}>
           <Outlet />
         </main>
       </div>
+      
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <MobileBottomNav
+          pendingAlerts={pendingAlerts}
+          onMoreClick={() => setMobileMenuOpen(true)}
+        />
+      )}
     </div>
   );
 }
