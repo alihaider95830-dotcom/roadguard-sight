@@ -8,14 +8,17 @@ import { api, subscribeToEvents, startRealtimeSimulation } from '@/lib/api';
 import type { Alert } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingAlerts, setPendingAlerts] = useState(0);
   const { isAuthenticated } = useAuthStore();
   const { audioMuted, audioAlarmEnabled } = useSettingsStore();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -23,6 +26,11 @@ export function AppLayout() {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  // Close mobile menu on navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [navigate]);
 
   // Start real-time simulation and subscribe to events
   useEffect(() => {
@@ -72,15 +80,20 @@ export function AppLayout() {
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
       />
       <div
         className={cn(
-          'flex-1 flex flex-col transition-all duration-300',
-          sidebarCollapsed ? 'ml-16' : 'ml-64'
+          'flex-1 flex flex-col transition-all duration-300 w-full',
+          !isMobile && (sidebarCollapsed ? 'ml-16' : 'ml-64')
         )}
       >
-        <TopBar pendingAlerts={pendingAlerts} />
-        <main className="flex-1 p-6 overflow-auto">
+        <TopBar
+          pendingAlerts={pendingAlerts}
+          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+        />
+        <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
           <Outlet />
         </main>
       </div>
