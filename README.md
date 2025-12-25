@@ -1,73 +1,168 @@
-# Welcome to your Lovable project
+# RoadGuard Sight
 
-## Project info
+> Automated Tire Inspection System - Real-time vehicle safety monitoring
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+RoadGuard Sight is an intelligent tire inspection platform that provides real-time monitoring and analysis of vehicle tire conditions using automated camera systems. The platform detects unsafe tire conditions, tracks inspection history, and generates comprehensive safety reports.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+### Real-time Monitoring
+- Live dashboard with inspection statistics
+- Real-time event subscriptions for instant updates
+- Automated camera-based tire inspections
+- License plate recognition and tracking
 
-**Use Lovable**
+### Safety Detection
+- Automated safe/unsafe tire classification
+- Confidence scoring for inspection accuracy
+- Alert system for unsafe tire conditions
+- Pending alerts management
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Data Management
+- Complete inspection history
+- Advanced search and filtering capabilities
+- License plate-based vehicle tracking
+- Detailed inspection records with timestamps
 
-Changes made via Lovable will be committed automatically to this repo.
+### Reporting & Analytics
+- Dashboard statistics and trends
+- Performance metrics tracking
+- Inspection reports generation
+- Camera location monitoring
 
-**Use your preferred IDE**
+### Administration
+- User management system
+- System settings configuration
+- Audit trail logging
+- Role-based access control
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **React Router** - Client-side routing
+- **TanStack Query** - Server state management
+- **Zustand** - Client state management
 
-Follow these steps:
+### UI Components
+- **shadcn/ui** - Component library
+- **Tailwind CSS** - Styling
+- **Radix UI** - Headless UI primitives
+- **Lucide React** - Icon library
+- **Recharts** - Data visualization
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Forms & Validation
+- **React Hook Form** - Form management
+- **Zod** - Schema validation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Additional Libraries
+- **date-fns** - Date manipulation
+- **Sonner** - Toast notifications
+- **next-themes** - Theme management
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Getting Started
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### Prerequisites
+- Node.js 18+ (recommended via [nvm](https://github.com/nvm-sh/nvm))
+- npm or bun package manager
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone <repository-url>
+cd roadguard-sight
 ```
 
-**Edit a file directly in GitHub**
+2. Install dependencies
+```bash
+npm install
+# or
+bun install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Start the development server
+```bash
+npm run dev
+# or
+bun dev
+```
 
-**Use GitHub Codespaces**
+The application will be available at `http://localhost:5173`
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Build for Production
 
-## What technologies are used for this project?
+```bash
+# Production build
+npm run build
 
-This project is built with:
+# Development build
+npm run build:dev
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Preview production build
+npm run preview
+```
 
-## How can I deploy this project?
+## Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```
+roadguard-sight/
+├── src/
+│   ├── components/
+│   │   ├── layout/          # Layout components
+│   │   └── ui/              # shadcn/ui components
+│   ├── pages/
+│   │   ├── admin/           # Admin pages
+│   │   ├── Dashboard.tsx    # Main dashboard
+│   │   ├── Alerts.tsx       # Alerts management
+│   │   ├── History.tsx      # Inspection history
+│   │   ├── Reports.tsx      # Report generation
+│   │   └── Login.tsx        # Authentication
+│   ├── lib/
+│   │   ├── api.ts           # API client
+│   │   └── utils.ts         # Utility functions
+│   ├── types/               # TypeScript types
+│   ├── App.tsx              # Root component
+│   └── main.tsx             # Application entry
+├── public/                  # Static assets
+└── package.json
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Available Scripts
 
-Yes, you can!
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run build:dev` | Build for development |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Key Pages
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Dashboard** (`/dashboard`) - Real-time inspection monitoring with statistics
+- **Alerts** (`/alerts`) - Manage and review unsafe tire alerts
+- **History** (`/history`) - Browse complete inspection history
+- **Inspection Detail** (`/inspections/:id`) - Detailed inspection view
+- **Reports** (`/reports`) - Generate and export reports
+- **Admin** (`/admin/*`) - User management, settings, and audit logs
+
+## Development
+
+### Code Quality
+- TypeScript for type safety
+- ESLint for code linting
+- Consistent code formatting
+- Component-based architecture
+
+### Styling
+- Tailwind CSS utility classes
+- Custom CSS variables for theming
+- Responsive design patterns
+- Dark mode support (via next-themes)
+
+## License
+
+Copyright © 2024. All rights reserved.
