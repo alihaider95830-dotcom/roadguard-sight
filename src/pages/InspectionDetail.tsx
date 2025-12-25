@@ -53,6 +53,11 @@ export function InspectionDetail() {
         month: 'long',
         day: 'numeric',
       }),
+      shortDate: date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
       time: date.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
@@ -67,7 +72,7 @@ export function InspectionDetail() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="space-y-2">
@@ -75,7 +80,7 @@ export function InspectionDetail() {
             <Skeleton className="h-4 w-32" />
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Skeleton className="h-64" />
           <Skeleton className="h-64" />
         </div>
@@ -99,32 +104,32 @@ export function InspectionDetail() {
     );
   }
 
-  const { date, time } = formatDateTime(inspection.timestamp);
+  const { date, shortDate, time } = formatDateTime(inspection.timestamp);
   const isSafe = inspection.status === 'Safe';
 
   return (
-    <div className="space-y-6 animate-fade-in print:p-4">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in print:p-4">
       {/* Header */}
-      <div className="flex items-center justify-between print:hidden">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Inspection Report</h1>
-            <p className="text-muted-foreground font-mono text-sm">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold">Inspection Report</h1>
+            <p className="text-muted-foreground font-mono text-xs sm:text-sm truncate">
               {inspection.inspectionId}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-2" />
-            Print
+        <div className="flex items-center gap-2 ml-12 sm:ml-0">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Print</span>
           </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export PDF
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export PDF</span>
           </Button>
         </div>
       </div>
@@ -142,47 +147,45 @@ export function InspectionDetail() {
           isSafe ? 'stat-glow-safe' : 'stat-glow-unsafe'
         )}
       >
-        <CardContent className="py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className={cn(
-                  'h-16 w-16 rounded-full flex items-center justify-center',
-                  isSafe ? 'bg-safe/20' : 'bg-unsafe/20'
-                )}
-              >
-                {isSafe ? (
-                  <Shield className="h-8 w-8 text-safe" />
-                ) : (
-                  <AlertTriangle className="h-8 w-8 text-unsafe" />
-                )}
+        <CardContent className="py-4 sm:py-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div
+              className={cn(
+                'h-12 w-12 sm:h-16 sm:w-16 rounded-full flex items-center justify-center shrink-0',
+                isSafe ? 'bg-safe/20' : 'bg-unsafe/20'
+              )}
+            >
+              {isSafe ? (
+                <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-safe" />
+              ) : (
+                <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-unsafe" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                <Badge variant={isSafe ? 'safe' : 'unsafe'} className="text-sm sm:text-lg px-3 sm:px-4 py-0.5 sm:py-1">
+                  {inspection.status}
+                </Badge>
+                <span className="text-sm sm:text-lg font-mono">
+                  {(inspection.confidence * 100).toFixed(1)}%
+                </span>
               </div>
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <Badge variant={isSafe ? 'safe' : 'unsafe'} className="text-lg px-4 py-1">
-                    {inspection.status}
-                  </Badge>
-                  <span className="text-lg font-mono">
-                    {(inspection.confidence * 100).toFixed(1)}% confidence
-                  </span>
-                </div>
-                <p className="text-muted-foreground">
-                  {isSafe
-                    ? 'No tire defects detected'
-                    : `${inspection.defectTypes?.length || 0} defect(s) identified`}
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                {isSafe
+                  ? 'No tire defects detected'
+                  : `${inspection.defectTypes?.length || 0} defect(s) identified`}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Details Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Vehicle & Location Info */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Car className="h-5 w-5" />
               Vehicle & Location
             </CardTitle>
@@ -190,50 +193,51 @@ export function InspectionDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">License Plate</p>
-                <p className="font-mono text-lg font-semibold">
+                <p className="text-xs sm:text-sm text-muted-foreground">License Plate</p>
+                <p className="font-mono text-base sm:text-lg font-semibold">
                   {inspection.licensePlate || 'Not captured'}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Processing Time</p>
-                <p className="font-mono text-lg">
+                <p className="text-xs sm:text-sm text-muted-foreground">Processing Time</p>
+                <p className="font-mono text-base sm:text-lg">
                   {inspection.processingDurationMs}ms
                 </p>
               </div>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 Location
               </div>
-              <p className="font-medium">{inspection.location}</p>
+              <p className="font-medium text-sm">{inspection.location}</p>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                 <Camera className="h-4 w-4" />
                 Camera
               </div>
-              <p className="font-mono">{inspection.cameraId}</p>
+              <p className="font-mono text-sm">{inspection.cameraId}</p>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 Timestamp
               </div>
-              <p>{date}</p>
-              <p className="font-mono text-sm text-muted-foreground">{time}</p>
+              <p className="text-sm hidden sm:block">{date}</p>
+              <p className="text-sm sm:hidden">{shortDate}</p>
+              <p className="font-mono text-xs sm:text-sm text-muted-foreground">{time}</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Defects */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <AlertTriangle className="h-5 w-5" />
               Defect Analysis
             </CardTitle>
@@ -258,9 +262,9 @@ export function InspectionDetail() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="h-2 w-2 rounded-full bg-unsafe" />
-                        <span className="font-medium">{defect}</span>
+                        <span className="font-medium text-sm">{defect}</span>
                       </div>
-                      <Badge variant="unsafe">Critical</Badge>
+                      <Badge variant="unsafe" className="text-xs">Critical</Badge>
                     </div>
                   ))}
                 </div>
@@ -272,11 +276,11 @@ export function InspectionDetail() {
 
       {/* Images */}
       <Card>
-        <CardHeader>
-          <CardTitle>Captured Images</CardTitle>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-lg">Captured Images</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {inspection.imageUrls.map((url, i) => (
               <div
                 key={i}
@@ -292,7 +296,7 @@ export function InspectionDetail() {
                   <ZoomIn className="h-8 w-8" />
                 </div>
                 <div className="absolute bottom-2 left-2">
-                  <Badge variant="secondary">Image {i + 1}</Badge>
+                  <Badge variant="secondary" className="text-xs">Image {i + 1}</Badge>
                 </div>
               </div>
             ))}
