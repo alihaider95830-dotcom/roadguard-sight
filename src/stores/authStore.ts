@@ -11,32 +11,6 @@ interface AuthState {
   setUser: (user: Operator, token: string) => void;
 }
 
-// Mock users for demonstration
-const mockUsers: Record<string, { password: string; user: Operator }> = {
-  'admin@atis.com': {
-    password: 'admin123',
-    user: {
-      operatorId: 1,
-      name: 'Admin User',
-      email: 'admin@atis.com',
-      role: 'Admin',
-      enabled: true,
-      createdAt: '2024-01-01T00:00:00Z',
-    },
-  },
-  'operator@atis.com': {
-    password: 'operator123',
-    user: {
-      operatorId: 2,
-      name: 'John Operator',
-      email: 'operator@atis.com',
-      role: 'Operator',
-      enabled: true,
-      createdAt: '2024-01-15T00:00:00Z',
-    },
-  },
-};
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -45,32 +19,29 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (email: string, password: string) => {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
 
-        const mockUser = mockUsers[email.toLowerCase()];
-        
-        if (!mockUser) {
-          return { success: false, error: 'User not found' };
+          const data = await res.json();
+
+          if (!res.ok) {
+            return { success: false, error: data.error || 'Login failed' };
+          }
+
+          set({
+            user: data.user,
+            token: data.token,
+            isAuthenticated: true,
+          });
+
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: 'Network error. Is the backend running?' };
         }
-
-        if (mockUser.password !== password) {
-          return { success: false, error: 'Invalid password' };
-        }
-
-        if (!mockUser.user.enabled) {
-          return { success: false, error: 'Account is disabled' };
-        }
-
-        const token = `mock-jwt-token-${Date.now()}`;
-        
-        set({
-          user: mockUser.user,
-          token,
-          isAuthenticated: true,
-        });
-
-        return { success: true };
       },
 
       logout: () => {

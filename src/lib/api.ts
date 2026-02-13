@@ -1,25 +1,45 @@
 import type { InspectionRecord, Alert, DashboardStats, Operator, AuditLog, ChartDataPoint, ReportConfig } from '@/types';
-import {
-  generateMockInspections,
-  generateMockAlerts,
-  getMockDashboardStats,
-  generateInspection,
-  generateAlertFromInspection,
-  mockOperators,
-  mockAuditLogs,
-  generateTrendData,
-  generateDefectDistribution,
-  generateLocationStats,
-} from './mockData';
 
-// Initialize mock data store
-let mockInspections = generateMockInspections(150);
-let mockAlerts = generateMockAlerts(mockInspections);
+// ---- helpers ----
 
-// Simulated API delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+function getToken(): string | null {
+  try {
+    const raw = localStorage.getItem('atis-auth');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.token ?? null;
+  } catch {
+    return null;
+  }
+}
 
-// Event listeners for real-time updates
+async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Only set Content-Type for JSON bodies (not FormData)
+  if (options.body && !(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || res.statusText);
+  }
+
+  return res.json();
+}
+
+// ---- Event system for real-time updates (SocketIO) ----
+
 type EventCallback<T> = (data: T) => void;
 const eventListeners: Map<string, Set<EventCallback<unknown>>> = new Map();
 
@@ -28,59 +48,42 @@ export const subscribeToEvents = <T>(event: string, callback: EventCallback<T>):
     eventListeners.set(event, new Set());
   }
   eventListeners.get(event)!.add(callback as EventCallback<unknown>);
-  
+
   return () => {
     eventListeners.get(event)?.delete(callback as EventCallback<unknown>);
   };
 };
 
-const emitEvent = <T>(event: string, data: T) => {
-  eventListeners.get(event)?.forEach((callback) => callback(data));
-};
-
-// Start real-time simulation
-let simulationInterval: ReturnType<typeof setInterval> | null = null;
-
 export const startRealtimeSimulation = () => {
-  if (simulationInterval) return;
-  
-  simulationInterval = setInterval(() => {
-    // Generate new inspection
-    const newInspection = generateInspection();
-    mockInspections = [newInspection, ...mockInspections].slice(0, 500);
-    emitEvent('inspection.created', newInspection);
-    
-    // If unsafe, generate alert
-    if (newInspection.status === 'Unsafe') {
-      const newAlert = generateAlertFromInspection(newInspection);
-      newAlert.status = 'Pending';
-      newAlert.escalated = false;
-      mockAlerts = [newAlert, ...mockAlerts];
-      emitEvent('alert.created', newAlert);
-    }
-  }, 5000 + Math.random() * 5000);
+  // For full SocketIO real-time support, install socket.io-client:
+  //   npm install socket.io-client
+  //
+  // Then use:
+  //   import { io } from 'socket.io-client';
+  //   const socket = io();
+  //   socket.on('inspection.created', (data) => { ... });
+  //   socket.on('alert.created', (data) => { ... });
+  //   socket.on('alert.updated', (data) => { ... });
 };
 
 export const stopRealtimeSimulation = () => {
-  if (simulationInterval) {
-    clearInterval(simulationInterval);
-    simulationInterval = null;
-  }
+  // Cleanup SocketIO connection here if needed
 };
 
-// API Functions
+// ---- API functions ----
+
 export const api = {
   // Auth
   login: async (email: string, password: string): Promise<{ token: string; user: Operator }> => {
-    await delay(500);
-    // Auth is handled by authStore, this is a placeholder for real API
-    throw new Error('Use authStore for login');
+    return request<{ token: string; user: Operator }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
   },
 
   // Dashboard
   getDashboardStats: async (): Promise<DashboardStats> => {
-    await delay(300);
-    return getMockDashboardStats(mockInspections);
+    return request<DashboardStats>('/api/dashboard/stats');
   },
 
   // Inspections
@@ -92,82 +95,48 @@ export const api = {
     page?: number;
     pageSize?: number;
   }): Promise<{ data: InspectionRecord[]; total: number }> => {
-    await delay(400);
-    
-    let filtered = [...mockInspections];
-    
-    if (params?.from) {
-      filtered = filtered.filter((i) => new Date(i.timestamp) >= new Date(params.from!));
-    }
-    if (params?.to) {
-      filtered = filtered.filter((i) => new Date(i.timestamp) <= new Date(params.to!));
-    }
-    if (params?.plate) {
-      filtered = filtered.filter((i) =>
-        i.licensePlate?.toLowerCase().includes(params.plate!.toLowerCase())
-      );
-    }
-    if (params?.status) {
-      filtered = filtered.filter((i) => i.status === params.status);
-    }
-    
-    // Sort by timestamp descending
-    filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
-    const page = params?.page || 1;
-    const pageSize = params?.pageSize || 20;
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    
-    return {
-      data: filtered.slice(start, end),
-      total: filtered.length,
-    };
+    const searchParams = new URLSearchParams();
+    if (params?.from) searchParams.set('from', params.from);
+    if (params?.to) searchParams.set('to', params.to);
+    if (params?.plate) searchParams.set('plate', params.plate);
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.pageSize) searchParams.set('pageSize', String(params.pageSize));
+
+    const qs = searchParams.toString();
+    return request<{ data: InspectionRecord[]; total: number }>(
+      `/api/inspections${qs ? '?' + qs : ''}`
+    );
   },
 
   getInspection: async (id: string): Promise<InspectionRecord | null> => {
-    await delay(300);
-    return mockInspections.find((i) => i.inspectionId === id) || null;
+    try {
+      return await request<InspectionRecord>(`/api/inspections/${id}`);
+    } catch {
+      return null;
+    }
   },
 
   // Alerts
   getAlerts: async (status?: Alert['status']): Promise<Alert[]> => {
-    await delay(300);
-    let filtered = [...mockAlerts];
-    if (status) {
-      filtered = filtered.filter((a) => a.status === status);
-    }
-    return filtered.sort((a, b) => new Date(b.alertDate).getTime() - new Date(a.alertDate).getTime());
+    const qs = status ? `?status=${status}` : '';
+    return request<Alert[]>(`/api/alerts${qs}`);
   },
 
   acknowledgeAlert: async (
     alertId: string,
     operatorId: number
   ): Promise<{ operatorId: number; responseTimeMs: number }> => {
-    await delay(300);
-    
-    const alert = mockAlerts.find((a) => a.alertId === alertId);
-    if (!alert) throw new Error('Alert not found');
-    
-    const responseTimeMs = Date.now() - new Date(alert.alertDate).getTime();
-    alert.status = 'Acknowledged';
-    alert.operatorId = operatorId;
-    alert.responseTimeMs = responseTimeMs;
-    alert.escalated = false;
-    
-    emitEvent('alert.updated', alert);
-    
-    return { operatorId, responseTimeMs };
+    return request<{ operatorId: number; responseTimeMs: number }>(
+      `/api/alerts/${alertId}/acknowledge`,
+      { method: 'PUT' }
+    );
   },
 
   resolveAlert: async (alertId: string): Promise<void> => {
-    await delay(300);
-    
-    const alert = mockAlerts.find((a) => a.alertId === alertId);
-    if (!alert) throw new Error('Alert not found');
-    
-    alert.status = 'Resolved';
-    emitEvent('alert.updated', alert);
+    await request<{ message: string }>(`/api/alerts/${alertId}/resolve`, {
+      method: 'PUT',
+    });
   },
 
   // Reports
@@ -175,58 +144,62 @@ export const api = {
     chartsData: ChartDataPoint[];
     summary: { total: number; safe: number; unsafe: number; avgConfidence: number };
   }> => {
-    await delay(600);
-    
-    let chartsData: ChartDataPoint[];
-    
-    switch (config.type) {
-      case 'trend':
-        chartsData = generateTrendData(7);
-        break;
-      case 'defects':
-        chartsData = generateDefectDistribution();
-        break;
-      case 'locations':
-        chartsData = generateLocationStats();
-        break;
-      case 'daily':
-      default:
-        chartsData = generateTrendData(30);
-    }
-    
-    const total = chartsData.reduce((sum, d) => sum + d.value, 0);
-    const safe = chartsData.reduce((sum, d) => sum + (d.safe || 0), 0);
-    const unsafe = chartsData.reduce((sum, d) => sum + (d.unsafe || 0), 0);
-    
-    return {
-      chartsData,
-      summary: {
-        total,
-        safe,
-        unsafe,
-        avgConfidence: 0.89,
-      },
-    };
+    return request('/api/reports/generate', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    });
   },
 
   // Admin - Users
   getOperators: async (): Promise<Operator[]> => {
-    await delay(300);
-    return [...mockOperators];
+    return request<Operator[]>('/api/admin/operators');
   },
 
   toggleOperatorStatus: async (operatorId: number): Promise<Operator> => {
-    await delay(300);
-    const operator = mockOperators.find((o) => o.operatorId === operatorId);
-    if (!operator) throw new Error('Operator not found');
-    operator.enabled = !operator.enabled;
-    return { ...operator };
+    return request<Operator>(`/api/admin/operators/${operatorId}/toggle`, {
+      method: 'PUT',
+    });
   },
 
   // Admin - Audit Logs
   getAuditLogs: async (): Promise<AuditLog[]> => {
-    await delay(300);
-    return [...mockAuditLogs];
+    return request<AuditLog[]>('/api/admin/audit');
+  },
+
+  // ML - Tire Inspection
+  inspectTire: async (
+    imageFile: File,
+    metadata?: { location?: string; cameraId?: string; licensePlate?: string }
+  ): Promise<{
+    inspection: InspectionRecord;
+    mlResult: {
+      status: string;
+      confidence: number;
+      defectTypes: string[];
+      processingDurationMs: number;
+    };
+    alert?: Alert;
+  }> => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    if (metadata?.location) formData.append('location', metadata.location);
+    if (metadata?.cameraId) formData.append('cameraId', metadata.cameraId);
+    if (metadata?.licensePlate) formData.append('licensePlate', metadata.licensePlate);
+
+    return request('/api/ml/inspect', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  // ML - Status
+  getMlStatus: async (): Promise<{
+    modelLoaded: boolean;
+    modelPath: string;
+    supportedDefects: string[];
+    supportedFormats: string[];
+  }> => {
+    return request('/api/ml/status');
   },
 };
 
